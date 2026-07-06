@@ -77,7 +77,16 @@ export const api = {
     },
     reprints: {
         list: (status) => request(`/reprint-requests${status ? `?status=${status}` : ''}`),
-        create: (cardholderId, reason) => request('/reprint-requests', { method: 'POST', body: { cardholder_id: cardholderId, reason } }),
+        create: (cardholderId, reason, dateIssued = null, expiryDate = null) => 
+            request('/reprint-requests', { 
+                method: 'POST', 
+                body: { 
+                    cardholder_id: cardholderId, 
+                    reason,
+                    date_issued: dateIssued,
+                    expiry_date: expiryDate
+                } 
+            }),
         approve: (id) => request(`/reprint-requests/${id}/approve`, { method: 'PUT' }),
         reject: (id) => request(`/reprint-requests/${id}/reject`, { method: 'PUT' }),
         markPrinted: (id) => request(`/reprint-requests/${id}/print`, { method: 'PUT' }),

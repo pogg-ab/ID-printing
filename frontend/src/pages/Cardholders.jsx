@@ -51,7 +51,7 @@ const Cardholders = () => {
   const getAssetUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('/storage') || url.startsWith('/assets')) {
-      return `http://localhost:8000${url}`;
+      return `https://id.office-tech-dire.com${url}`;
     }
     return url;
   };
@@ -714,7 +714,7 @@ const Cardholders = () => {
               </button>
             </div>
             <form onSubmit={handleSaveCardholder}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Organization</label>
                   <select 
@@ -747,7 +747,7 @@ const Cardholders = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="grid-3">
                 <div className="form-group">
                   <label className="form-label">Full Name</label>
                   <input 
@@ -780,7 +780,7 @@ const Cardholders = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="grid-3">
                 <div className="form-group">
                   <label className="form-label">Date of Birth</label>
                   <input 
@@ -820,7 +820,7 @@ const Cardholders = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="grid-3">
                 <div className="form-group">
                   <label className="form-label">Nationality</label>
                   <input 
@@ -850,7 +850,7 @@ const Cardholders = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+              <div className="grid-2-3">
                 <div className="form-group">
                   <label className="form-label">Address</label>
                   <input 
@@ -881,7 +881,7 @@ const Cardholders = () => {
               </div>
 
               {/* Emergency info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Emergency Contact Name</label>
                   <input 
@@ -903,7 +903,7 @@ const Cardholders = () => {
               </div>
 
               {/* Dates Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+              <div className="grid-2" style={{ marginTop: '16px' }}>
                 <div className="form-group">
                   <label className="form-label">Date Issued</label>
                   <input 
@@ -925,7 +925,7 @@ const Cardholders = () => {
               </div>
 
               {/* Photo Upload Widgets */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', margin: '16px 0', padding: '16px', backgroundColor: 'var(--border-light)', borderRadius: 'var(--radius-sm)' }}>
+              <div className="grid-3" style={{ margin: '16px 0', padding: '16px', backgroundColor: 'var(--border-light)', borderRadius: 'var(--radius-sm)' }}>
                 <div className="form-group">
                   <label className="form-label">Resident Photo</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1182,9 +1182,8 @@ const Cardholders = () => {
 
               {/* Action Buttons */}
               <div 
+                className="grid-3"
                 style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '1fr 1fr 1fr', 
                   gap: '12px', 
                   width: '100%', 
                   marginTop: '10px',

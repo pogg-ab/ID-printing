@@ -143,7 +143,8 @@ const Deliveries = () => {
         </div>
 
         {/* Official delivery note invoice design */}
-        <div style={{ width: '210mm', minHeight: '297mm', padding: '20mm', backgroundColor: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', boxSizing: 'border-box', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+        <div style={{ width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: '210mm', minHeight: '297mm', padding: '20mm', backgroundColor: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', boxSizing: 'border-box', border: '1px solid #e2e8f0', textAlign: 'left', flexShrink: 0 }}>
           <div style={{ borderBottom: '2px solid black', paddingBottom: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1 style={{ fontSize: '24px', margin: 0, textTransform: 'uppercase' }}>Delivery Note</h1>
@@ -201,6 +202,7 @@ const Deliveries = () => {
               <p>Received By (Sign/Stamp)</p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     );
@@ -352,7 +354,7 @@ const Deliveries = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Received By (Name)</label>
                   <input 

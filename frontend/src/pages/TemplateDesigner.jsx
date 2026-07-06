@@ -377,7 +377,7 @@ const TemplateDesigner = () => {
               )}
 
               {/* Coordinates Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div className="grid-2" style={{ gap: '12px', marginBottom: '16px' }}>
                 <div className="form-group">
                   <label className="form-label">X Position (mm)</label>
                   <input 

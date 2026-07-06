@@ -635,26 +635,27 @@ const PrintBatches = () => {
           }
 
           return (
-            <div 
-              key={pageIdx} 
-              style={{ 
-                width: '210mm', 
-                height: '297mm', 
-                padding: printSheetType === 'BOTH' ? '4mm 10mm' : '15mm 10mm',
-                boxSizing: 'border-box',
-                pageBreakAfter: 'always', 
-                breakAfter: 'page', 
-                backgroundColor: 'white',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gridGap: printSheetType === 'BOTH' ? '1.5mm 8mm' : '12mm 8mm',
-                justifyContent: 'center',
-                justifyItems: 'center',
-                alignContent: 'center',
-                margin: '0 auto',
-                position: 'relative'
-              }}
-            >
+            <div key={pageIdx} style={{ width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+              <div 
+                style={{ 
+                  width: '210mm', 
+                  height: '297mm', 
+                  padding: printSheetType === 'BOTH' ? '4mm 10mm' : '15mm 10mm',
+                  boxSizing: 'border-box',
+                  pageBreakAfter: 'always', 
+                  breakAfter: 'page', 
+                  backgroundColor: 'white',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gridGap: printSheetType === 'BOTH' ? '1.5mm 8mm' : '12mm 8mm',
+                  justifyContent: 'center',
+                  justifyItems: 'center',
+                  alignContent: 'center',
+                  margin: '0 auto',
+                  position: 'relative',
+                  flexShrink: 0
+                }}
+              >
               {orderedCards.map((cardObj, cardIdx) => {
                 if (!cardObj) {
                   return <div key={`empty-${cardIdx}`} style={{ width: '86.4mm', height: '53.3mm' }} />;
@@ -696,6 +697,7 @@ const PrintBatches = () => {
                   </div>
                 );
               })}
+            </div>
             </div>
           );
         })}
@@ -1057,9 +1059,8 @@ const PrintBatches = () => {
 
               {/* Action Buttons */}
               <div 
+                className="grid-3"
                 style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '1fr 1fr 1fr', 
                   gap: '12px', 
                   width: '100%', 
                   marginTop: '10px',

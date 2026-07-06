@@ -14,8 +14,40 @@ const Reprints = () => {
   // Form State
   const [form, setForm] = useState({
     cardholder_id: '',
-    reason: ''
+    reason: '',
+    date_issued: '',
+    expiry_date: ''
   });
+
+  const handleCardholderSelect = (chId) => {
+    const selectedCh = cardholders.find(ch => ch.id === chId);
+    if (selectedCh) {
+      // Use original issue date if present, otherwise default to today
+      const originalIssue = selectedCh.date_issued;
+      const today = new Date().toISOString().split('T')[0];
+      const issue = originalIssue || today;
+
+      // Use original expiry date if present, otherwise default to today + 2 years
+      const originalExpiry = selectedCh.expiry_date;
+      const twoYearsLater = new Date();
+      twoYearsLater.setFullYear(twoYearsLater.getFullYear() + 2);
+      const expiry = originalExpiry || twoYearsLater.toISOString().split('T')[0];
+
+      setForm({
+        ...form,
+        cardholder_id: chId,
+        date_issued: issue,
+        expiry_date: expiry
+      });
+    } else {
+      setForm({
+        ...form,
+        cardholder_id: '',
+        date_issued: '',
+        expiry_date: ''
+      });
+    }
+  };
 
   useEffect(() => {
     fetchReprints();
@@ -60,9 +92,14 @@ const Reprints = () => {
     }
 
     try {
-      await api.reprints.create(form.cardholder_id, form.reason);
+      await api.reprints.create(
+        form.cardholder_id, 
+        form.reason, 
+        form.date_issued || null, 
+        form.expiry_date || null
+      );
       setIsModalOpen(false);
-      setForm({ cardholder_id: '', reason: '' });
+      setForm({ cardholder_id: '', reason: '', date_issued: '', expiry_date: '' });
       setSearchQuery('');
       setCardholders([]);
       fetchReprints();
@@ -234,6 +271,8 @@ const Reprints = () => {
               <th>Resident Name</th>
               <th>Organization</th>
               <th>Reason for Reprint</th>
+              <th>Issue Date</th>
+              <th>Expiry Date</th>
               <th>Requested At</th>
               <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
@@ -242,7 +281,7 @@ const Reprints = () => {
           <tbody>
             {reprints.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-light)' }}>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-light)' }}>
                   No reprint requests logged. Click "Request Reprint" to submit one.
                 </td>
               </tr>
@@ -253,6 +292,8 @@ const Reprints = () => {
                   <td>{rep.cardholder?.full_name}</td>
                   <td>{rep.cardholder?.organization?.name}</td>
                   <td>{rep.reason}</td>
+                  <td>{rep.cardholder?.date_issued ? new Date(rep.cardholder.date_issued + 'T00:00:00').toLocaleDateString() : '-'}</td>
+                  <td>{rep.cardholder?.expiry_date ? new Date(rep.cardholder.expiry_date + 'T00:00:00').toLocaleDateString() : '-'}</td>
                   <td>{new Date(rep.requested_at || rep.created_at).toLocaleDateString()}</td>
                   <td>
                     <span className={`badge badge-${rep.status.toLowerCase()}`}>{rep.status}</span>
@@ -320,7 +361,7 @@ const Reprints = () => {
                   <select 
                     className="form-control" 
                     value={form.cardholder_id}
-                    onChange={e => setForm({ ...form, cardholder_id: e.target.value })}
+                    onChange={e => handleCardholderSelect(e.target.value)}
                     required
                   >
                     <option value="">Choose resident...</option>
@@ -347,6 +388,31 @@ const Reprints = () => {
                   <option value="Renewal">Expiry Renewal</option>
                 </select>
               </div>
+
+              {form.cardholder_id && (
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">New Issue Date</label>
+                    <input 
+                      type="date" 
+                      className="form-control" 
+                      value={form.date_issued}
+                      onChange={e => setForm({ ...form, date_issued: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">New Expiry Date</label>
+                    <input 
+                      type="date" 
+                      className="form-control" 
+                      value={form.expiry_date}
+                      onChange={e => setForm({ ...form, expiry_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>

@@ -156,7 +156,7 @@ const AuditTrail = () => {
               </button>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: selectedLog.old_value ? '1fr 1fr' : '1fr', gap: '20px' }}>
+            <div className={`grid-diff ${selectedLog.old_value ? '' : 'single'}`}>
               {selectedLog.old_value && (
                 <div>
                   <h4 style={{ fontSize: '13px', color: 'var(--danger)', marginBottom: '8px' }}>Previous State</h4>

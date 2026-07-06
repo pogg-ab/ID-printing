@@ -26,6 +26,8 @@ class ReprintRequestController extends Controller
         $request->validate([
             'cardholder_id' => 'required|exists:cardholders,id',
             'reason' => 'required|string|max:500',
+            'date_issued' => 'nullable|date',
+            'expiry_date' => 'nullable|date',
         ]);
 
         $reprint = DB::transaction(function () use ($request) {
@@ -35,6 +37,32 @@ class ReprintRequestController extends Controller
                 'status' => 'PENDING',
                 'requested_at' => now(),
             ]);
+
+            // Update cardholder dates if provided
+            $cardholder = Cardholder::findOrFail($request->cardholder_id);
+            if ($request->filled('date_issued')) {
+                $cardholder->date_issued = $request->date_issued;
+            }
+            if ($request->filled('expiry_date')) {
+                $cardholder->expiry_date = $request->expiry_date;
+            }
+            $cardholder->save();
+
+            // Re-sync QR code for the cardholder
+            $qrCode = $cardholder->qrCode;
+            if ($qrCode) {
+                $qrCode->update([
+                    'qr_data' => [
+                        'id' => $cardholder->id,
+                        'name' => $cardholder->full_name,
+                        'card_no' => $cardholder->card_number,
+                        'gender' => $cardholder->gender,
+                        'blood' => $cardholder->blood_group,
+                        'issue' => $cardholder->date_issued,
+                        'expiry' => $cardholder->expiry_date,
+                    ],
+                ]);
+            }
 
             // Audit Log
             AuditLog::create([

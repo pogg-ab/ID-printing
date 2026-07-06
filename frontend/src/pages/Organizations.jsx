@@ -28,7 +28,7 @@ const Organizations = () => {
   const getAssetUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('/storage') || url.startsWith('/assets')) {
-      return `http://localhost:8000${url}`;
+      return `https://id.office-tech-dire.com${url}`;
     }
     return url;
   };
@@ -302,7 +302,7 @@ const Organizations = () => {
                   rows="3"
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Contact Person</label>
                   <input 

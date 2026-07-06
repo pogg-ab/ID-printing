@@ -976,3 +976,58 @@ a {
     grid-template-columns: 1fr 1fr !important;
   }
 }
+
+/* ==========================================
+   Responsive Helper Grid Classes
+   ========================================== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-2-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-diff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.grid-diff.single {
+  grid-template-columns: 1fr;
+}
+
+/* Responsive updates for layout structures */
+@media (max-width: 1024px) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-2-3, .grid-diff {
+    grid-template-columns: 1fr !important;
+  }
+
+  .toggle-tabs {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .toggle-tab {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 120px !important;
+  }
+}
+

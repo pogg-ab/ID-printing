@@ -192,7 +192,7 @@ const Templates = () => {
                   required 
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Width (mm)</label>
                   <input 
