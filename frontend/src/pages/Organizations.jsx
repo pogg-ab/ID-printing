@@ -28,7 +28,8 @@ const Organizations = () => {
   const getAssetUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('/storage') || url.startsWith('/assets')) {
-      return `https://id.office-tech-dire.com${url}`;
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      return `${backendUrl}${url}`;
     }
     return url;
   };

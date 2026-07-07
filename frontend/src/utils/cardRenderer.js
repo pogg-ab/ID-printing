@@ -394,8 +394,13 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
             targetUrl = targetUrl.substring('http://localhost:8000'.length);
           } else if (targetUrl.startsWith('http://127.0.0.1:8000')) {
             targetUrl = targetUrl.substring('http://127.0.0.1:8000'.length);
-          } else if (targetUrl.startsWith('https://id.office-tech-dire.com')) {
-            targetUrl = targetUrl.substring('https://id.office-tech-dire.com'.length);
+          } else {
+            const backendUrl = import.meta.env.VITE_BACKEND_URL;
+            if (backendUrl && targetUrl.startsWith(backendUrl)) {
+              targetUrl = targetUrl.substring(backendUrl.length);
+            } else if (targetUrl.startsWith('https://id.office-tech-dire.com')) {
+              targetUrl = targetUrl.substring('https://id.office-tech-dire.com'.length);
+            }
           }
 
           img.src = targetUrl;
