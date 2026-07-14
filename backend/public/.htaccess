@@ -1,9 +1,19 @@
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-XSRF-Token, X-User-Id, X-User-Role"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Handle OPTIONS preflight requests directly
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ - [R=200,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -12,6 +22,14 @@
     # Handle X-XSRF-Token Header
     RewriteCond %{HTTP:x-xsrf-token} .
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Handle X-User-Id Header
+    RewriteCond %{HTTP:x-user-id} .
+    RewriteRule .* - [E=HTTP_X_USER_ID:%{HTTP:X-User-Id}]
+
+    # Handle X-User-Role Header
+    RewriteCond %{HTTP:x-user-role} .
+    RewriteRule .* - [E=HTTP_X_USER_ROLE:%{HTTP:X-User-Role}]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

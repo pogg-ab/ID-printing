@@ -125,6 +125,64 @@ class UserController extends Controller
     }
 
     /**
+     * List all organizations assigned to a user.
+     */
+    public function listOrganizations($id)
+    {
+        $user = User::findOrFail($id);
+        $organizations = $user->organizations()
+            ->select('organizations.id', 'organizations.code', 'organizations.name')
+            ->get()
+            ->map(function ($org) {
+                return [
+                    'id' => $org->id,
+                    'code' => $org->code,
+                    'name' => $org->name,
+                    'is_active' => (bool) $org->pivot->is_active,
+                    'created_at' => $org->pivot->created_at ? $org->pivot->created_at->toDateTimeString() : null,
+                ];
+            });
+
+        return response()->json($organizations);
+    }
+
+    /**
+     * Assign an organization to a user.
+     */
+    public function assignOrganization(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        
+        $request->validate([
+            'organization_id' => 'required|exists:organizations,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $orgId = $request->organization_id;
+        $isActive = $request->get('is_active', true);
+
+        // Check if already assigned
+        if ($user->organizations()->where('organizations.id', $orgId)->exists()) {
+            $user->organizations()->updateExistingPivot($orgId, ['is_active' => $isActive]);
+        } else {
+            $user->organizations()->attach($orgId, ['is_active' => $isActive]);
+        }
+
+        return response()->json(['message' => 'Organization assigned successfully.']);
+    }
+
+    /**
+     * Remove an organization assignment from a user.
+     */
+    public function removeOrganization($id, $orgId)
+    {
+        $user = User::findOrFail($id);
+        $user->organizations()->detach($orgId);
+
+        return response()->json(['message' => 'Organization assignment removed successfully.']);
+    }
+
+    /**
      * Format a user for JSON response — includes permissions as a flat map.
      */
     private function formatUser(User $user): array

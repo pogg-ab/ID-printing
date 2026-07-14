@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Plus, Layout, Trash2, Edit } from 'lucide-react';
+import { Plus, Layout, Trash2, Edit, Upload } from 'lucide-react';
 
 const Templates = () => {
   const navigate = useNavigate();
@@ -10,14 +10,53 @@ const Templates = () => {
   const [cardTypes, setCardTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadingFront, setUploadingFront] = useState(false);
+  const [uploadingBack, setUploadingBack] = useState(false);
+
   const [form, setForm] = useState({
     organization_id: '',
     card_type_id: '',
     name: '',
     width: 86.40,
     height: 53.30,
-    is_default: false
+    is_default: false,
+    front_background_image: '',
+    back_background_image: ''
   });
+
+  const getAssetUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/storage') || url.startsWith('/assets')) {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      return `${backendUrl}${url}`;
+    }
+    return url;
+  };
+
+  const handleBackgroundUpload = async (e, side) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('side', side);
+
+    try {
+      if (side === 'front') setUploadingFront(true);
+      else setUploadingBack(true);
+
+      const response = await api.templates.uploadBackground(formData);
+      setForm(prev => ({ 
+        ...prev, 
+        [side === 'front' ? 'front_background_image' : 'back_background_image']: response.url 
+      }));
+    } catch (err) {
+      alert(err.message || `Failed to upload ${side} background image`);
+    } finally {
+      if (side === 'front') setUploadingFront(false);
+      else setUploadingBack(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -56,6 +95,17 @@ const Templates = () => {
     try {
       const newTemp = await api.templates.create(form);
       setIsModalOpen(false);
+      // Reset form
+      setForm({
+        organization_id: '',
+        card_type_id: '',
+        name: '',
+        width: 86.40,
+        height: 53.30,
+        is_default: false,
+        front_background_image: '',
+        back_background_image: ''
+      });
       // Immediately redirect to designer for this new template!
       navigate(`/templates/designer/${newTemp.id}`);
     } catch (err) {
@@ -214,6 +264,41 @@ const Templates = () => {
                     onChange={(e) => setForm({ ...form, height: parseFloat(e.target.value) })} 
                     required 
                   />
+                </div>
+              </div>
+              <div className="grid-2" style={{ marginTop: '16px', marginBottom: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Front Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '86px', height: '53px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', flexShrink: 0 }}>
+                      {form.front_background_image ? (
+                        <img src={getAssetUrl(form.front_background_image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '9px', color: '#94a3b8', textAlign: 'center', padding: '2px' }}>Default Front</span>
+                      )}
+                    </div>
+                    <label className="btn btn-secondary" style={{ cursor: 'pointer', margin: 0, padding: '8px 12px', fontSize: '13px' }}>
+                      {uploadingFront ? 'Uploading...' : <><Upload size={14} /> Upload Front</>}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBackgroundUpload(e, 'front')} disabled={uploadingFront} />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Back Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '86px', height: '53px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', flexShrink: 0 }}>
+                      {form.back_background_image ? (
+                        <img src={getAssetUrl(form.back_background_image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '9px', color: '#94a3b8', textAlign: 'center', padding: '2px' }}>Default Back</span>
+                      )}
+                    </div>
+                    <label className="btn btn-secondary" style={{ cursor: 'pointer', margin: 0, padding: '8px 12px', fontSize: '13px' }}>
+                      {uploadingBack ? 'Uploading...' : <><Upload size={14} /> Upload Back</>}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBackgroundUpload(e, 'back')} disabled={uploadingBack} />
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

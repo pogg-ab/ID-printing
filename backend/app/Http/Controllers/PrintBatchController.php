@@ -14,7 +14,8 @@ class PrintBatchController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PrintBatch::with(['organization', 'cardTemplate']);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $query = PrintBatch::with(['organization', 'cardTemplate'])->whereIn('organization_id', $allowedIds);
 
         if ($request->filled('organization_id')) {
             $query->where('organization_id', $request->organization_id);
@@ -29,12 +30,18 @@ class PrintBatchController extends Controller
 
     public function store(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'card_template_id' => 'required|exists:card_templates,id',
             'cardholder_ids' => 'required|array',
             'cardholder_ids.*' => 'required|exists:cardholders,id',
         ]);
+
+        if (!$allowedIds->contains($request->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
 
         $batch = DB::transaction(function () use ($request) {
             $batchNumber = 'PB-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
@@ -70,19 +77,24 @@ class PrintBatchController extends Controller
         return response()->json($batch->load(['printBatchCards.cardholder']), 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $batch = PrintBatch::with(['organization', 'cardTemplate', 'printBatchCards.cardholder.attributes', 'printBatchCards.cardholder.qrCode', 'printBatchCards.cardholder.barcode'])->findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $batch = PrintBatch::with(['organization', 'cardTemplate', 'printBatchCards.cardholder.attributes', 'printBatchCards.cardholder.qrCode', 'printBatchCards.cardholder.barcode'])
+            ->whereIn('organization_id', $allowedIds)
+            ->findOrFail($id);
         return response()->json($batch);
     }
 
     public function updateStatus(Request $request, $id)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $request->validate([
             'status' => 'required|string|in:DRAFT,APPROVED,PRINTED,DELIVERED',
         ]);
 
-        $batch = PrintBatch::findOrFail($id);
+        $batch = PrintBatch::whereIn('organization_id', $allowedIds)->findOrFail($id);
         $oldValue = $batch->toArray();
 
         DB::transaction(function () use ($batch, $request, $oldValue) {
@@ -129,9 +141,10 @@ class PrintBatchController extends Controller
         return response()->json($batch->load(['printBatchCards.cardholder']));
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $batch = PrintBatch::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $batch = PrintBatch::whereIn('organization_id', $allowedIds)->findOrFail($id);
         
         DB::transaction(function () use ($batch) {
             // Write Audit Log

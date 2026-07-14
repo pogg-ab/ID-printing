@@ -15,6 +15,7 @@ class Cardholder extends Model
     protected $fillable = [
         'organization_id',
         'card_type_id',
+        'card_template_id',
         'card_number',
         'full_name',
         'full_name_amharic',
@@ -45,6 +46,11 @@ class Cardholder extends Model
     public function cardType(): BelongsTo
     {
         return $this->belongsTo(CardType::class);
+    }
+
+    public function cardTemplate(): BelongsTo
+    {
+        return $this->belongsTo(CardTemplate::class);
     }
 
     public function attributes(): HasMany

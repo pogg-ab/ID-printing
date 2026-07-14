@@ -3,11 +3,23 @@ const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
     
+    // Get current user for optional backend auth mapping
+    let currentUser = null;
+    try {
+        const stored = localStorage.getItem('currentUser');
+        if (stored) currentUser = JSON.parse(stored);
+    } catch (e) {}
+
     // Set headers
     const headers = {
         'Accept': 'application/json',
         ...options.headers,
     };
+
+    if (currentUser) {
+        headers['X-User-Id'] = currentUser.id;
+        headers['X-User-Role'] = currentUser.role;
+    }
 
     // If body is not FormData, treat as JSON
     if (options.body && !(options.body instanceof FormData)) {
@@ -52,6 +64,7 @@ export const api = {
         update: (id, data) => request(`/templates/${id}`, { method: 'PUT', body: data }),
         delete: (id) => request(`/templates/${id}`, { method: 'DELETE' }),
         saveElements: (id, elements) => request(`/templates/${id}/elements`, { method: 'POST', body: { elements } }),
+        uploadBackground: (formData) => request('/templates/upload-background', { method: 'POST', body: formData }),
     },
     cardholders: {
         list: (params = {}) => {
@@ -111,5 +124,11 @@ export const api = {
         update: (id, data) => request(`/users/${id}`, { method: 'PUT', body: data }),
         delete: (id) => request(`/users/${id}`, { method: 'DELETE' }),
         updatePermissions: (id, permissions) => request(`/users/${id}/permissions`, { method: 'PUT', body: { permissions } }),
+        
+        // Organization Assignments
+        listOrganizations: (id) => request(`/users/${id}/organizations`),
+        assignOrganization: (id, orgId, isActive = true) => 
+            request(`/users/${id}/organizations`, { method: 'POST', body: { organization_id: orgId, is_active: isActive } }),
+        removeOrganization: (id, orgId) => request(`/users/${id}/organizations/${orgId}`, { method: 'DELETE' }),
     },
 };

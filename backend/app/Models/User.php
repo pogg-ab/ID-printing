@@ -53,4 +53,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserPermission::class);
     }
+
+    public function organizations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'organization_user')
+                    ->withPivot('is_active')
+                    ->withTimestamps();
+    }
 }

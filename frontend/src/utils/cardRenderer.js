@@ -388,19 +388,31 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
             res(null);
           };
 
-          // Route images relatively through Vite proxy to bypass CORS restrictions
+          // Route images relatively through Vite proxy in development, and load absolutely in production
           let targetUrl = url;
-          if (targetUrl.startsWith('http://localhost:8000')) {
-            targetUrl = targetUrl.substring('http://localhost:8000'.length);
-          } else if (targetUrl.startsWith('http://127.0.0.1:8000')) {
-            targetUrl = targetUrl.substring('http://127.0.0.1:8000'.length);
-          } else {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            if (backendUrl && targetUrl.startsWith(backendUrl)) {
-              targetUrl = targetUrl.substring(backendUrl.length);
-            } else if (targetUrl.startsWith('https://id.office-tech-dire.com')) {
-              targetUrl = targetUrl.substring('https://id.office-tech-dire.com'.length);
+          if (targetUrl.startsWith('/storage') || targetUrl.startsWith('/assets')) {
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+            if (!import.meta.env.DEV) {
+              targetUrl = `${backendUrl}${targetUrl}`;
             }
+          } else {
+            if (import.meta.env.DEV) {
+              if (targetUrl.startsWith('http://localhost:8000')) {
+                targetUrl = targetUrl.substring('http://localhost:8000'.length);
+              } else if (targetUrl.startsWith('http://127.0.0.1:8000')) {
+                targetUrl = targetUrl.substring('http://127.0.0.1:8000'.length);
+              } else {
+                const backendUrl = import.meta.env.VITE_BACKEND_URL;
+                if (backendUrl && targetUrl.startsWith(backendUrl)) {
+                  targetUrl = targetUrl.substring(backendUrl.length);
+                }
+              }
+            }
+          }
+
+          // Bypass browser cache CORS conflicts by appending a cache buster
+          if (!targetUrl.startsWith('data:')) {
+            targetUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + '_cb=' + new Date().getTime();
           }
 
           img.src = targetUrl;
@@ -408,8 +420,9 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
       };
 
       // 1. Draw Background Image
-      // Force identical background image for both sides to guarantee color consistency and eliminate white center block
-      const bgUrl = template?.front_background_image || '/assets/id_front_bg.png';
+      const bgUrl = side === 'FRONT'
+        ? (template?.front_background_image || '/assets/id_front_bg.png')
+        : (template?.back_background_image || '/assets/id_back_bg.png');
 
       const bgImg = await loadImage(bgUrl);
       if (bgImg) {
@@ -454,6 +467,10 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
       // 3. Helper to resolve field value from cardholder record
       const getCardFieldVal = (field) => {
         if (!cardholder) return '';
+
+        if (field === 'sign_authority_text' && !cardholder.signature_image_url) {
+          return '';
+        }
 
         let rawVal = '';
         if (cardholder[field]) {
@@ -639,7 +656,7 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
             const labelSizePt = 4.1; // slightly larger for readability
             const labelSizePx = labelSizePt * (dpi / 72);
             ctx.font = `bold ${labelSizePx}px Inter, sans-serif`;
-            ctx.fillStyle = '#1e293b'; // Slate-800 darker bold label
+            ctx.fillStyle = elem.font_color || '#1e293b'; // Slate-800 darker bold label
             ctx.textBaseline = 'top';
             ctx.fillText(labelText, x, y);
 
@@ -648,7 +665,7 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
             const valueSizePt = isName ? 7.2 : 6.0;
             const valueSizePx = valueSizePt * (dpi / 72);
             ctx.font = `bold ${valueSizePx}px Inter, sans-serif`;
-            ctx.fillStyle = '#0f172a'; // Slate-900 bold value
+            ctx.fillStyle = elem.font_color || '#0f172a'; // Slate-900 bold value
             ctx.textBaseline = 'top';
 
             // Value is drawn below the label
@@ -690,8 +707,10 @@ export const drawCardToCanvas = (canvas, cardholder, template, side, dpi = 300) 
 
             ctx.font = `${elem.font_weight || 'normal'} ${fontSizePx}px Inter, sans-serif`;
 
-            // Customize colors for specific texts
-            if (elem.field_name?.includes('header')) {
+            // Customize colors for specific texts or honor custom font color
+            if (elem.font_color) {
+              ctx.fillStyle = elem.font_color;
+            } else if (elem.field_name?.includes('header')) {
               ctx.fillStyle = '#0f172a'; // Bold title
             } else if (elem.field_name === 'disclaimer') {
               ctx.fillStyle = '#1e293b'; // Slate-800 bold disclaimer

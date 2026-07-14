@@ -15,7 +15,9 @@ class CardholderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Cardholder::with(['organization', 'cardType', 'attributes', 'qrCode', 'barcode']);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $query = Cardholder::with(['organization', 'cardType', 'cardTemplate', 'attributes', 'qrCode', 'barcode'])
+            ->whereIn('organization_id', $allowedIds);
 
         if ($request->filled('organization_id')) {
             $query->where('organization_id', $request->organization_id);
@@ -39,9 +41,12 @@ class CardholderController extends Controller
 
     public function store(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $validated = $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'card_type_id' => 'required|exists:card_types,id',
+            'card_template_id' => 'nullable|exists:card_templates,id',
             'card_number' => 'nullable|string|max:100|unique:cardholders,card_number',
             'full_name' => 'required|string|max:300',
             'full_name_amharic' => 'nullable|string|max:300',
@@ -67,6 +72,10 @@ class CardholderController extends Controller
             'attributes.*.name' => 'required|string|max:100',
             'attributes.*.value' => 'nullable|string',
         ]);
+
+        if (!$allowedIds->contains($request->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
 
         // Duplicate check (Validation Engine & Duplicate Detection)
         if (!empty($validated['date_of_birth'])) {
@@ -136,17 +145,22 @@ class CardholderController extends Controller
         return response()->json($cardholder->load(['attributes', 'qrCode', 'barcode']), 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $cardholder = Cardholder::with(['organization', 'cardType', 'attributes', 'qrCode', 'barcode'])->findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $cardholder = Cardholder::with(['organization', 'cardType', 'cardTemplate', 'attributes', 'qrCode', 'barcode'])
+            ->whereIn('organization_id', $allowedIds)
+            ->findOrFail($id);
         return response()->json($cardholder);
     }
 
     public function update(Request $request, $id)
     {
-        $cardholder = Cardholder::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $cardholder = Cardholder::whereIn('organization_id', $allowedIds)->findOrFail($id);
 
         $validated = $request->validate([
+            'card_template_id' => 'nullable|exists:card_templates,id',
             'card_number' => 'required|string|max:100|unique:cardholders,card_number,' . $cardholder->id,
             'full_name' => 'required|string|max:300',
             'full_name_amharic' => 'nullable|string|max:300',
@@ -216,9 +230,10 @@ class CardholderController extends Controller
         return response()->json($cardholder->load(['attributes', 'qrCode', 'barcode']));
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $cardholder = Cardholder::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $cardholder = Cardholder::whereIn('organization_id', $allowedIds)->findOrFail($id);
         $cardholder->delete();
         return response()->json(['message' => 'Cardholder deleted successfully']);
     }
@@ -244,11 +259,17 @@ class CardholderController extends Controller
     // CSV Bulk Import
     public function bulkImport(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'card_type_id' => 'required|exists:card_types,id',
             'csv_file' => 'required|file|mimes:csv,txt|max:4096',
         ]);
+
+        if (!$allowedIds->contains($request->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
 
         $file = $request->file('csv_file');
         $filePath = $file->getRealPath();

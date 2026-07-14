@@ -28,6 +28,15 @@ const TemplateDesigner = () => {
   const [selectedSide, setSelectedSide] = useState('FRONT'); // FRONT or BACK
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const getAssetUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/storage') || url.startsWith('/assets')) {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      return `${backendUrl}${url}`;
+    }
+    return url;
+  };
   
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
@@ -64,7 +73,8 @@ const TemplateDesigner = () => {
       font_family: 'Inter',
       font_size: 7,
       font_weight: 'normal',
-      is_visible: true
+      is_visible: true,
+      font_color: ''
     };
 
     setElements([...elements, newElement]);
@@ -266,8 +276,8 @@ const TemplateDesigner = () => {
             className="card-canvas"
             style={{ 
               backgroundImage: selectedSide === 'FRONT' 
-                ? `url(${template?.front_background_image || '/assets/id_front_bg.png'})`
-                : `url(${template?.back_background_image || '/assets/id_back_bg.png'})`,
+                ? `url(${getAssetUrl(template?.front_background_image || '/assets/id_front_bg.png')})`
+                : `url(${getAssetUrl(template?.back_background_image || '/assets/id_back_bg.png')})`,
               backgroundColor: '#edf2f7',
               boxShadow: 'var(--shadow-lg)'
             }}
@@ -294,7 +304,7 @@ const TemplateDesigner = () => {
                     backgroundColor: isSelected ? 'rgba(129, 140, 248, 0.1)' : 'rgba(255, 255, 255, 0.65)',
                     border: isSelected ? '2px solid var(--primary)' : '1px dashed #718096',
                     borderRadius: '4px',
-                    color: 'var(--text-h)',
+                    color: elem.font_color || 'var(--text-h)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
@@ -455,6 +465,34 @@ const TemplateDesigner = () => {
                       <option value="normal">Normal</option>
                       <option value="bold">Bold</option>
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Font Color</label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input 
+                        type="color" 
+                        className="form-control" 
+                        style={{ width: '40px', height: '36px', padding: '2px', cursor: 'pointer' }}
+                        value={selectedElement.font_color || '#1e293b'}
+                        onChange={(e) => updateSelectedElement('font_color', e.target.value)}
+                      />
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        placeholder="#1e293b"
+                        value={selectedElement.font_color || ''}
+                        onChange={(e) => updateSelectedElement('font_color', e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        style={{ padding: '8px 12px' }}
+                        onClick={() => updateSelectedElement('font_color', '')}
+                      >
+                        Reset
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

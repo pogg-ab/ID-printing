@@ -23,6 +23,7 @@ class TemplateElement extends Model
         'font_size',
         'font_weight',
         'is_visible',
+        'font_color',
     ];
 
     public function cardTemplate(): BelongsTo

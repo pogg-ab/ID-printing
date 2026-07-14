@@ -471,17 +471,19 @@ a {
 
 /* Modal Popup Window */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(4px);
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  backdrop-filter: blur(4px) !important;
 }
 
 .modal-content {
@@ -494,6 +496,7 @@ a {
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   padding: 32px;
+  box-sizing: border-box;
 }
 
 /* Tool Buttons inside Designer Side Menu */
@@ -907,6 +910,8 @@ a {
     padding: 16px !important;
     margin: 10px !important;
     max-height: 95vh !important;
+    width: 90% !important;
+    max-width: 90% !important;
   }
 
   /* Stack any grid template columns inside forms, cards, and dialog lists */

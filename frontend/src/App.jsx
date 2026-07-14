@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
@@ -38,6 +38,7 @@ const AdminRoute = ({ currentUser, children }) => {
 function App() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const navigate = useNavigate();
 
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     localStorage.getItem('isAuthenticated') === 'true'
@@ -59,6 +60,7 @@ function App() {
     localStorage.setItem('currentUser', JSON.stringify(userData));
     setIsAuthenticated(true);
     setCurrentUser(userData);
+    navigate('/');
   };
 
   const handleLogout = () => {
@@ -66,6 +68,7 @@ function App() {
     localStorage.removeItem('currentUser');
     setIsAuthenticated(false);
     setCurrentUser(null);
+    navigate('/');
   };
 
   const getPageTitle = () => {

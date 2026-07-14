@@ -12,7 +12,11 @@ class ReprintRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ReprintRequest::with(['cardholder.organization', 'cardholder.cardType']);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $query = ReprintRequest::with(['cardholder.organization', 'cardholder.cardType'])
+            ->whereHas('cardholder', function ($q) use ($allowedIds) {
+                $q->whereIn('organization_id', $allowedIds);
+            });
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -23,6 +27,8 @@ class ReprintRequestController extends Controller
 
     public function store(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $request->validate([
             'cardholder_id' => 'required|exists:cardholders,id',
             'reason' => 'required|string|max:500',
@@ -30,16 +36,18 @@ class ReprintRequestController extends Controller
             'expiry_date' => 'nullable|date',
         ]);
 
-        $reprint = DB::transaction(function () use ($request) {
+        $cardholder = Cardholder::findOrFail($request->cardholder_id);
+        if (!$allowedIds->contains($cardholder->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
+
+        $reprint = DB::transaction(function () use ($request, $cardholder) {
             $reprint = ReprintRequest::create([
                 'cardholder_id' => $request->cardholder_id,
                 'reason' => $request->reason,
                 'status' => 'PENDING',
                 'requested_at' => now(),
             ]);
-
-            // Update cardholder dates if provided
-            $cardholder = Cardholder::findOrFail($request->cardholder_id);
             if ($request->filled('date_issued')) {
                 $cardholder->date_issued = $request->date_issued;
             }
@@ -81,7 +89,10 @@ class ReprintRequestController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $reprint = ReprintRequest::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $reprint = ReprintRequest::whereHas('cardholder', function ($q) use ($allowedIds) {
+            $q->whereIn('organization_id', $allowedIds);
+        })->findOrFail($id);
         $oldValue = $reprint->toArray();
 
         DB::transaction(function () use ($reprint, $oldValue) {
@@ -107,7 +118,10 @@ class ReprintRequestController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $reprint = ReprintRequest::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $reprint = ReprintRequest::whereHas('cardholder', function ($q) use ($allowedIds) {
+            $q->whereIn('organization_id', $allowedIds);
+        })->findOrFail($id);
         $oldValue = $reprint->toArray();
 
         DB::transaction(function () use ($reprint, $oldValue) {
@@ -129,9 +143,12 @@ class ReprintRequestController extends Controller
         return response()->json($reprint);
     }
 
-    public function markPrinted($id)
+    public function markPrinted(Request $request, $id)
     {
-        $reprint = ReprintRequest::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $reprint = ReprintRequest::whereHas('cardholder', function ($q) use ($allowedIds) {
+            $q->whereIn('organization_id', $allowedIds);
+        })->findOrFail($id);
         $oldValue = $reprint->toArray();
 
         DB::transaction(function () use ($reprint, $oldValue) {

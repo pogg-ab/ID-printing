@@ -11,7 +11,8 @@ class TemplateController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CardTemplate::with(['organization', 'cardType']);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $query = CardTemplate::with(['organization', 'cardType'])->whereIn('organization_id', $allowedIds);
 
         if ($request->filled('organization_id')) {
             $query->where('organization_id', $request->organization_id);
@@ -22,6 +23,8 @@ class TemplateController extends Controller
 
     public function store(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $validated = $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'card_type_id' => 'required|exists:card_types,id',
@@ -33,6 +36,10 @@ class TemplateController extends Controller
             'is_default' => 'boolean',
         ]);
 
+        if (!$allowedIds->contains($request->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
+
         // If template is default, mark other templates for same card type as not default
         if ($request->is_default) {
             CardTemplate::where('card_type_id', $request->card_type_id)->update(['is_default' => false]);
@@ -43,15 +50,17 @@ class TemplateController extends Controller
         return response()->json($template, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $template = CardTemplate::with(['organization', 'cardType', 'elements'])->findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $template = CardTemplate::with(['organization', 'cardType', 'elements'])->whereIn('organization_id', $allowedIds)->findOrFail($id);
         return response()->json($template);
     }
 
     public function update(Request $request, $id)
     {
-        $template = CardTemplate::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $template = CardTemplate::whereIn('organization_id', $allowedIds)->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:200',
@@ -71,9 +80,10 @@ class TemplateController extends Controller
         return response()->json($template);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $template = CardTemplate::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $template = CardTemplate::whereIn('organization_id', $allowedIds)->findOrFail($id);
         $template->delete();
         return response()->json(['message' => 'Template deleted successfully']);
     }
@@ -81,7 +91,8 @@ class TemplateController extends Controller
     // Save/update elements (drag-and-drop designer API)
     public function saveElements(Request $request, $id)
     {
-        $template = CardTemplate::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $template = CardTemplate::whereIn('organization_id', $allowedIds)->findOrFail($id);
 
         $request->validate([
             'elements' => 'required|array',
@@ -96,6 +107,7 @@ class TemplateController extends Controller
             'elements.*.font_size' => 'nullable|integer',
             'elements.*.font_weight' => 'nullable|string|max:20',
             'elements.*.is_visible' => 'boolean',
+            'elements.*.font_color' => 'nullable|string|max:50',
         ]);
 
         DB::transaction(function () use ($template, $request) {
@@ -109,5 +121,22 @@ class TemplateController extends Controller
         });
 
         return response()->json($template->load('elements'));
+    }
+
+    public function uploadBackground(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:4096',
+            'side' => 'required|string|in:front,back',
+        ]);
+
+        if ($request->file('image')) {
+            $path = $request->file('image')->store('templates/backgrounds', 'public');
+            return response()->json([
+                'url' => '/storage/' . $path
+            ]);
+        }
+
+        return response()->json(['error' => 'Upload failed'], 400);
     }
 }

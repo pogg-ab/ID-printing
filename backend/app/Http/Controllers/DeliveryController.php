@@ -13,7 +13,8 @@ class DeliveryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Delivery::with(['organization', 'printBatch']);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $query = Delivery::with(['organization', 'printBatch'])->whereIn('organization_id', $allowedIds);
 
         if ($request->filled('organization_id')) {
             $query->where('organization_id', $request->organization_id);
@@ -24,6 +25,8 @@ class DeliveryController extends Controller
 
     public function store(Request $request)
     {
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+
         $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'print_batch_id' => 'required|exists:print_batches,id',
@@ -31,6 +34,10 @@ class DeliveryController extends Controller
             'receiver_phone' => 'nullable|string|max:50',
             'remarks' => 'nullable|string',
         ]);
+
+        if (!$allowedIds->contains($request->organization_id)) {
+            return response()->json(['message' => 'Unauthorized organization.'], 403);
+        }
 
         $delivery = DB::transaction(function () use ($request) {
             $deliveryNumber = 'DN-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
@@ -73,9 +80,12 @@ class DeliveryController extends Controller
         return response()->json($delivery->load(['deliveryItems.cardholder', 'organization', 'printBatch']), 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $delivery = Delivery::with(['organization', 'printBatch', 'deliveryItems.cardholder'])->findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $delivery = Delivery::with(['organization', 'printBatch', 'deliveryItems.cardholder'])
+            ->whereIn('organization_id', $allowedIds)
+            ->findOrFail($id);
         return response()->json($delivery);
     }
 }

@@ -56,6 +56,7 @@ Route::put('card-types/{id}', [OrganizationController::class, 'updateCardType'])
 Route::delete('card-types/{id}', [OrganizationController::class, 'destroyCardType']);
 
 // Templates & Elements
+Route::post('templates/upload-background', [TemplateController::class, 'uploadBackground']);
 Route::apiResource('templates', TemplateController::class);
 Route::post('templates/{id}/elements', [TemplateController::class, 'saveElements']);
 
@@ -96,3 +97,6 @@ Route::post('users', [UserController::class, 'store']);
 Route::put('users/{id}', [UserController::class, 'update']);
 Route::delete('users/{id}', [UserController::class, 'destroy']);
 Route::put('users/{id}/permissions', [UserController::class, 'updatePermissions']);
+Route::get('users/{id}/organizations', [UserController::class, 'listOrganizations']);
+Route::post('users/{id}/organizations', [UserController::class, 'assignOrganization']);
+Route::delete('users/{id}/organizations/{orgId}', [UserController::class, 'removeOrganization']);

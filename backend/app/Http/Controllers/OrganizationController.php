@@ -8,9 +8,10 @@ use Illuminate\Http\Request;
 
 class OrganizationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Organization::withCount(['cardTypes', 'cardholders'])->get());
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        return response()->json(Organization::withCount(['cardTypes', 'cardholders'])->whereIn('id', $allowedIds)->get());
     }
 
     public function store(Request $request)
@@ -25,19 +26,26 @@ class OrganizationController extends Controller
             'logo_url' => 'nullable|string',
         ]);
 
+        $userId = $request->header('X-User-Id');
+        if ($userId) {
+            $validated['created_by'] = $userId;
+        }
+
         $org = Organization::create($validated);
         return response()->json($org, 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $org = Organization::with(['cardTypes'])->findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $org = Organization::with(['cardTypes'])->whereIn('id', $allowedIds)->findOrFail($id);
         return response()->json($org);
     }
 
     public function update(Request $request, $id)
     {
-        $org = Organization::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $org = Organization::whereIn('id', $allowedIds)->findOrFail($id);
 
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:organizations,code,' . $org->id,
@@ -54,23 +62,26 @@ class OrganizationController extends Controller
         return response()->json($org);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $org = Organization::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $org = Organization::whereIn('id', $allowedIds)->findOrFail($id);
         $org->delete();
         return response()->json(['message' => 'Organization deleted successfully']);
     }
 
     // Card Type routes associated with Organization
-    public function listCardTypes($orgId)
+    public function listCardTypes(Request $request, $orgId)
     {
-        $org = Organization::findOrFail($orgId);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $org = Organization::whereIn('id', $allowedIds)->findOrFail($orgId);
         return response()->json($org->cardTypes);
     }
 
     public function storeCardType(Request $request, $orgId)
     {
-        $org = Organization::findOrFail($orgId);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $org = Organization::whereIn('id', $allowedIds)->findOrFail($orgId);
 
         $validated = $request->validate([
             'code' => 'required|string|max:50',
@@ -85,7 +96,8 @@ class OrganizationController extends Controller
 
     public function updateCardType(Request $request, $id)
     {
-        $cardType = CardType::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $cardType = CardType::whereIn('organization_id', $allowedIds)->findOrFail($id);
 
         $validated = $request->validate([
             'code' => 'required|string|max:50',
@@ -98,9 +110,10 @@ class OrganizationController extends Controller
         return response()->json($cardType);
     }
 
-    public function destroyCardType($id)
+    public function destroyCardType(Request $request, $id)
     {
-        $cardType = CardType::findOrFail($id);
+        $allowedIds = $this->getAllowedOrganizationIds($request);
+        $cardType = CardType::whereIn('organization_id', $allowedIds)->findOrFail($id);
         $cardType->delete();
         return response()->json(['message' => 'Card Type deleted successfully']);
     }
